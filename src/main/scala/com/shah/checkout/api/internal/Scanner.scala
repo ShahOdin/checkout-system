@@ -1,22 +1,26 @@
-package com.shah.checkout
+package com.shah.checkout.api.internal
 
 import com.shah.checkout.data._
 
 trait Scanner {
-  val scanItems: Seq[BarCode] => Seq[Item]
-  val validateItems: Seq[Item] => Seq[KnownItem]
+  protected val scanItems: Seq[BarCode] => Seq[Item]
+  protected val validateItems: Seq[Item] => Seq[RecognisedItem]
+
+  lazy val scanCodes: Seq[BarCode] => Seq[RecognisedItem] = {
+    scanItems andThen validateItems
+  }
 }
 
 object SimpleScanner extends Scanner {
-  val scanItems: Seq[BarCode] => Seq[Item] = _.map {
-    case Orange.code => Orange
-    case Apple.code => Apple
-    case _ => UnknownItem //trigger: "please wait for assistance/help is coming!" :D
+  override protected val scanItems: Seq[BarCode] => Seq[Item] = _.map {
+    case Orange.`barCode` => Orange
+    case Apple.`barCode` => Apple
+    case _ => UnrecognisedItem //trigger: "please wait for assistance/help is coming!" :D
   }
 
-  val validateItems: Seq[Item] => Seq[KnownItem] = {
+  override protected val validateItems: Seq[Item] => Seq[RecognisedItem] = {
     _.collect{
-      case item:KnownItem => item
+      case item:RecognisedItem => item
     }
   }
 }
